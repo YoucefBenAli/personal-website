@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070B16">
+  <meta name="description" content="A personal website you can explore through a terminal.">
+  <title>Youcef — Terminal</title>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/terminal.css">
+  <script src="config.js" defer></script>
+  <script src="assets/terminal.js" defer></script>
+</head>
+<body>
+  <main class="window" aria-label="Personal website terminal">
+    <header class="titlebar">
+      <div class="window-label"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span id="window-title">youcef / terminal</span></div>
+      <span class="theme-label" id="theme-label">cyan</span>
+    </header>
+    <section class="screen" id="screen" aria-label="Interactive terminal">
+      <div id="output" role="log" aria-label="Command transcript" aria-live="polite" aria-relevant="additions"></div>
+      <form class="prompt" id="command-form" autocomplete="off">
+        <label for="command-input" class="prompt-label"><span class="host">youcef</span><span class="prompt-path">@home:~</span> $</label>
+        <input id="command-input" name="command" type="text" aria-label="Terminal command" aria-describedby="keyboard-help" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send">
+      </form>
+      <p class="sr-only" id="keyboard-help">Type a command and press Enter. Tab completes and cycles matches. Up and down arrows recall history. Shift+Tab leaves the input; Escape releases terminal focus. Control or Command plus L clears the transcript. Control plus C cancels the current line when no text is selected.</p>
+      <div class="sr-only" id="status" role="status" aria-atomic="true"></div>
+      <noscript><p>This terminal needs JavaScript to run commands. You can still <a href="design-studies.html" target="_blank" rel="noopener noreferrer">browse the design studies</a>.</p></noscript>
+    </section>
+  </main>
+</body>
+</html>

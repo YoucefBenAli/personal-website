@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111311">
+  <meta name="description" content="A quiet terminal portfolio mockup.">
+  <title>Your Name — your.dev</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111311;
+      --frame: #191a19;
+      --ink: #d8dbd1;
+      --muted: #92988d;
+      --dim: #70776d;
+      --sage: #b1c1a4;
+      --line: rgba(190, 204, 178, .18);
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { min-width: 320px; min-height: 100%; background: var(--bg); }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      padding: 12px;
+      overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 12% 0%, rgba(89, 101, 78, .11), transparent 34rem),
+        var(--bg);
+      font-family: var(--mono);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .window {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: calc(100vh - 24px);
+      height: calc(100svh - 24px);
+      overflow: hidden;
+      border: 1px solid rgba(190, 204, 178, .26);
+      border-radius: 9px;
+      background: linear-gradient(145deg, rgba(27, 27, 27, .99), rgba(17, 19, 17, .99) 80%);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .23), inset 0 1px rgba(255, 255, 255, .025);
+    }
+
+    .titlebar {
+      display: flex;
+      flex: 0 0 35px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 13px;
+      border-bottom: 1px solid var(--line);
+      color: var(--dim);
+      font-size: 10px;
+      line-height: 1;
+    }
+    .titlebar-left { display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .dots { display: flex; flex: none; gap: 5px; margin-right: 5px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #73796e; }
+    .dot:nth-child(2) { background: #8a846d; }
+    .dot:nth-child(3) { background: #786b6e; }
+    .window-title { overflow: hidden; color: #a8aa9f; text-overflow: ellipsis; white-space: nowrap; }
+    .window-state { flex: none; color: #76816f; font-size: 9px; letter-spacing: .06em; }
+
+    .terminal {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      padding: 17px 20px 12px;
+      overflow-y: auto;
+    }
+    .transcript {
+      flex: 0 0 auto;
+      min-height: 0;
+      overflow: visible;
+      color: #aeb2a7;
+      font-size: 12px;
+      line-height: 1.7;
+      scrollbar-color: #4c5348 transparent;
+      scrollbar-width: thin;
+      overscroll-behavior: contain;
+    }
+    .identity { color: var(--ink); line-height: 1.55; }
+    .tagline { color: #92988d; }
+    .demo-note { color: #697168; font-size: 10px; }
+    .menu { width: min(530px, 100%); margin-top: 15px; }
+    .menu-heading { margin: 0 0 3px; color: #778170; font-size: 10px; }
+    .menu-list { display: grid; }
+    .menu-row {
+      display: flex;
+      align-items: baseline;
+      width: 100%;
+      min-height: 23px;
+      padding: 1px 0;
+      border: 0;
+      color: inherit;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      line-height: 1.7;
+    }
+    .menu-command { flex: 0 0 82px; color: #d3d8cc; }
+    .menu-command::before { margin-right: 7px; color: #85967b; content: "›"; }
+    .menu-leader {
+      flex: 1 1 auto;
+      min-width: 12px;
+      margin: 0 12px 4px 0;
+      border-bottom: 1px dotted rgba(190, 204, 178, .24);
+    }
+    .menu-description {
+      flex: 0 1 190px;
+      overflow: hidden;
+      color: #858b80;
+      font-size: 10px;
+      text-align: right;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .menu-row:hover .menu-command, .menu-row:focus-visible .menu-command { color: var(--sage); }
+    .menu-row:hover .menu-description, .menu-row:focus-visible .menu-description { color: #bbc5b1; }
+    .menu-row:focus-visible { outline: 1px solid rgba(177, 193, 164, .68); outline-offset: 2px; }
+
+    .transcript-note { margin: 11px 0 0; color: #70776d; font-size: 10px; }
+    .transcript-note .help-command { color: #a6b39a; }
+    .entry { margin: 10px 0 13px; }
+    .entry-command { color: #c8cec0; overflow-wrap: anywhere; }
+    .entry-prompt { color: #87967c; }
+    .entry-result { margin: 2px 0 0; color: #a1a69a; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+    .entry-result.is-error { color: #b79d94; }
+    .entry-result .menu { margin-top: 3px; }
+    .entry-result .menu-heading { padding-top: 2px; }
+
+    .prompt-line {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 9px;
+      min-height: 34px;
+      margin-top: 8px;
+      border-top: 0;
+    }
+    .prompt-label { flex: none; color: #9eae91; font-size: 11px; white-space: nowrap; }
+    .command-input {
+      flex: 1;
+      width: 0;
+      min-width: 0;
+      padding: 7px 0;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+      caret-color: var(--sage);
+      font: 12px/1.5 var(--mono);
+    }
+    .command-input::placeholder { color: #646b62; opacity: 1; }
+    .prompt-line:focus-within { border-top-color: rgba(177, 193, 164, .43); }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 520px) {
+      body { padding: 9px; }
+      .window { height: calc(100vh - 18px); height: calc(100svh - 18px); }
+      .titlebar { flex-basis: 33px; padding: 0 11px; }
+      .terminal { padding: 14px 13px 10px; }
+      .transcript { font-size: 11px; }
+      .menu-command { flex-basis: 73px; }
+      .menu-leader { margin-right: 8px; }
+      .menu-description { flex-basis: 44%; font-size: 9px; }
+      .prompt-line { gap: 7px; }
+      .prompt-label { font-size: 10px; }
+      .command-input { font-size: 11px; }
+    }
+
+    @media (max-width: 360px) {
+      .terminal { padding-right: 10px; padding-left: 10px; }
+      .menu-command { flex-basis: 68px; }
+      .menu-leader { margin-right: 6px; }
+      .prompt-label { font-size: 9px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="window" aria-label="Your Name terminal portfolio demo">
+    <div class="titlebar" aria-hidden="true">
+      <div class="titlebar-left">
+        <span class="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i></span>
+        <span class="window-title">your.dev — terminal</span>
+      </div>
+      <span class="window-state">LOCAL</span>
+    </div>
+
+    <section class="terminal" aria-label="Interactive portfolio terminal">
+      <div class="transcript" id="transcript" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Terminal transcript">
+        <div class="identity">Your Name</div>
+        <div class="tagline">software | design | solver</div>
+        <div class="demo-note">[demo content — replace before publishing]</div>
+        <div id="menu-mount"></div>
+        <p class="transcript-note">Choose a command or type <span class="help-command">help</span>.</p>
+      </div>
+      <form class="prompt-line" id="command-form" autocomplete="off">
+        <label class="prompt-label" for="command-input">guest@your.dev:~$</label>
+        <input class="command-input" id="command-input" name="command" type="text" aria-label="Terminal command" placeholder="" spellcheck="false" autocapitalize="off" aria-describedby="keyboard-help">
+      </form>
+      <div class="sr-only" id="keyboard-help">Type a command and press Enter. Use the up and down arrow keys to navigate command history. Press Control or Command plus L to clear the transcript.</div>
+      <div class="sr-only" id="status" aria-live="polite" aria-atomic="true"></div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const transcript = document.getElementById('transcript');
+      const form = document.getElementById('command-form');
+      const input = document.getElementById('command-input');
+      const status = document.getElementById('status');
+      const menuMount = document.getElementById('menu-mount');
+      const commandHistory = [];
+      let historyPosition = 0;
+      let historyDraft = '';
+
+      const menuItems = [
+        ['about', 'a little context'],
+        ['stack', 'tools & materials'],
+        ['projects', 'selected work'],
+        ['notes', 'writing & other thoughts'],
+        ['github', 'code, in public'],
+        ['contact', 'start a conversation'],
+        ['help', 'list available commands'],
+        ['clear', 'clear the transcript']
+      ];
+
+      const responses = {
+        about: 'A placeholder for a short introduction to Your Name.\nReplace this demo biography with your own story and focus.',
+        stack: 'A sample toolkit:\nTypeScript · React · CSS · Figma · a notebook\nReplace these with the tools and materials you actually use.',
+        projects: '01  Fieldnotes — a calm workspace for collecting ideas.\n02  Common Ground — a small, community-minded map.\n\nSample projects only. Replace these with your own work.',
+        notes: 'A placeholder for writing, notes, and works in progress.\nAdd a short description of what you write about.',
+        github: 'Demo destination — no external link is configured.\nAdd your GitHub profile URL when you are ready to publish.',
+        contact: 'Contact is a placeholder in this mockup.\nReplace this with your preferred email address or contact method.'
+      };
+
+      function makeMenu() {
+        const menu = document.createElement('div');
+        menu.className = 'menu';
+        const heading = document.createElement('div');
+        heading.className = 'menu-heading';
+        heading.textContent = 'Available commands';
+        const list = document.createElement('div');
+        list.className = 'menu-list';
+        for (const [command, description] of menuItems) {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'menu-row';
+          row.setAttribute('aria-label', `Run ${command} command`);
+          row.dataset.command = command;
+          const name = document.createElement('span');
+          name.className = 'menu-command';
+          name.textContent = command;
+          const leader = document.createElement('span');
+          leader.className = 'menu-leader';
+          leader.setAttribute('aria-hidden', 'true');
+          const detail = document.createElement('span');
+          detail.className = 'menu-description';
+          detail.textContent = description;
+          row.append(name, leader, detail);
+          list.append(row);
+        }
+        menu.append(heading, list);
+        return menu;
+      }
+
+      function createHelpMenu() {
+        const fragment = document.createDocumentFragment();
+        const header = document.createElement('div');
+        header.textContent = 'Available commands';
+        fragment.append(header);
+        const menu = makeMenu();
+        menu.querySelector('.menu-heading').remove();
+        fragment.append(menu);
+        return fragment;
+      }
+
+      function clearTranscript() {
+        transcript.replaceChildren();
+        status.textContent = 'Transcript cleared. The terminal prompt is ready.';
+        input.focus({ preventScroll: true });
+      }
+
+      function appendEntry(raw, command, response, isError = false) {
+        const entry = document.createElement('div');
+        entry.className = 'entry';
+        const commandLine = document.createElement('div');
+        commandLine.className = 'entry-command';
+        const prompt = document.createElement('span');
+        prompt.className = 'entry-prompt';
+        prompt.textContent = 'guest@your.dev:~$ ';
+        commandLine.append(prompt, document.createTextNode(raw));
+        entry.append(commandLine);
+
+        if (command === 'help') {
+          const result = document.createElement('div');
+          result.className = 'entry-result';
+          result.append(createHelpMenu());
+          entry.append(result);
+        } else {
+          const result = document.createElement('pre');
+          result.className = `entry-result${isError ? ' is-error' : ''}`;
+          result.textContent = response;
+          entry.append(result);
+        }
+        transcript.append(entry);
+        const screen = transcript.parentElement;
+        screen.scrollTop = screen.scrollHeight;
+      }
+
+      function runCommand(raw) {
+        const value = raw.trim();
+        if (!value) return;
+        if (commandHistory[commandHistory.length - 1] !== value) commandHistory.push(value);
+        historyPosition = commandHistory.length;
+        historyDraft = '';
+
+        const command = value.split(/\s+/, 1)[0].toLowerCase();
+        if (command === 'clear') {
+          clearTranscript();
+          return;
+        }
+        if (command === 'help') {
+          appendEntry(value, command, '');
+          return;
+        }
+        if (Object.prototype.hasOwnProperty.call(responses, command)) {
+          appendEntry(value, command, responses[command]);
+          return;
+        }
+        appendEntry(value, command, `Command not found: ${command}\nType "help" to see available commands.`, true);
+      }
+
+      function runMenuCommand(event) {
+        const button = event.target.closest('[data-command]');
+        if (button && transcript.contains(button)) runCommand(button.dataset.command);
+      }
+
+      menuMount.append(makeMenu());
+      transcript.addEventListener('click', runMenuCommand);
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        runCommand(input.value);
+        input.value = '';
+      });
+
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          if (historyPosition === commandHistory.length) historyDraft = input.value;
+          if (historyPosition > 0) historyPosition -= 1;
+          input.value = commandHistory[historyPosition] || '';
+          input.setSelectionRange(input.value.length, input.value.length);
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          if (historyPosition < commandHistory.length - 1) {
+            historyPosition += 1;
+            input.value = commandHistory[historyPosition];
+          } else {
+            historyPosition = commandHistory.length;
+            input.value = historyDraft;
+          }
+          input.setSelectionRange(input.value.length, input.value.length);
+        } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'l') {
+          event.preventDefault();
+          clearTranscript();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#100c10"><title>Your Name — Terminal</title>
+<style>
+:root{color-scheme:dark;--bg:#100c10;--surface:#160f15;--text:#e8dfe5;--muted:#aa9ba6;--accent:#f08caf;--gold:#d9b36d;--border:#743248;--bar:#291921}*{box-sizing:border-box}html,body{height:100%;margin:0}body{padding:8px;background:var(--bg);color:var(--text);font:14px/1.7 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible{outline:1px solid var(--accent);outline-offset:4px}.terminal{height:100%;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:linear-gradient(130deg,#160f1580,transparent 65%);box-shadow:0 0 36px -18px var(--accent)}.titlebar{flex-shrink:0;display:flex;align-items:center;gap:11px;padding:6px 13px;background:var(--bar);border-bottom:1px solid var(--border);color:var(--muted);font-size:11px;letter-spacing:.04em}.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;background:#ba4e77}.dots i:nth-child(2){background:#b78c47}.dots i:nth-child(3){background:#c78ba2}.screen{flex:1;min-height:0;overflow:auto;padding:17px 18px 24px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;overflow-wrap:anywhere}.line{white-space:pre-wrap}.muted{color:var(--muted)}.accent{color:var(--accent)}.gold{color:var(--gold)}.brand{color:var(--accent);font-weight:600}.intro{margin-bottom:25px}.intro p{margin:0}.commands{margin:0 0 3px}.command-row{display:flex;align-items:baseline;gap:5px;min-height:26px}.command,.text-button{padding:0;border:0;background:none;color:var(--accent);text-align:left}.command:hover,.text-button:hover{text-decoration:underline}.leader{flex:1;min-width:12px;height:1px;align-self:center;border-bottom:1px dotted #6e5665;opacity:.6}.description{color:var(--muted);text-align:right}.prompt{display:flex;align-items:baseline;gap:7px;margin:0}.ps1{flex-shrink:0;color:var(--muted);white-space:nowrap}.host{color:var(--accent)}.at,.path{color:var(--gold)}input{flex:1;min-width:0;padding:0;border:0;outline:none;background:transparent;color:var(--text);caret-color:var(--accent);border-radius:0}input:focus-visible{box-shadow:0 1px 0 #f08caf24}input::placeholder{color:var(--muted);opacity:.5}.entry{margin-bottom:15px}.echo{margin-bottom:5px;white-space:pre-wrap}.response{white-space:pre-wrap}.response p{margin:0 0 8px}.response p:last-child{margin-bottom:0}.project{margin-bottom:13px}.project-title{color:var(--gold)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:600px){body{padding:6px;font-size:12px}.screen{padding:15px 12px}.hostname{display:none}.description{font-size:11px}.command-row{min-height:26px}.intro{margin-bottom:23px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+.comparison[hidden]{display:none}.comparison{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:var(--bg)}.compare-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bar);font-size:12px}.compare-bar button{background:transparent;border:1px solid var(--border);padding:3px 8px;color:var(--text)}.compare-bar button[aria-pressed=true]{color:var(--accent);border-color:var(--accent)}.compare-title{margin-right:auto}.compare-frame{flex:1;min-height:0;width:100%;border:0;background:var(--bg)}.version-row{margin-bottom:12px}.version-row .text-button{margin-right:12px}.version-row a{font-size:12px}.compare-hint{font-size:10px;color:var(--muted)}.compare-bar select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);padding:3px;max-width:190px}.compare-bar select:focus-visible{outline:1px solid var(--accent);outline-offset:2px}@media(max-width:600px){.compare-title{width:100%}.compare-hint{display:none}}
+</style>
+</head>
+<body>
+<main class="terminal" aria-label="Terminal personal website">
+<div class="titlebar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>your.dev</span></div>
+<div class="screen" id="screen">
+<div id="output" role="log" aria-live="polite" aria-relevant="additions"></div>
+<form class="prompt" id="form" autocomplete="off"><label class="ps1" for="input"><span class="hostname"><span class="host">you</span><span class="at">@</span>home </span><span class="path">~/your.dev</span> $</label><input id="input" aria-label="Terminal command" spellcheck="false" autocapitalize="off" autocomplete="off"></form>
+</div>
+</main>
+<section class="comparison" id="comparison" aria-label="Mockup version comparison" hidden>
+<div class="compare-bar"><span class="compare-title" id="compare-title"></span><button type="button" id="compare-current" aria-pressed="true">Current twist</button><button type="button" id="compare-previous" aria-pressed="false">Previous</button><label for="compare-archive">Archive:</label><select id="compare-archive"><option value="current">Current</option><option value="20261001-190313">Before feature round</option><option value="20261001-192122">Restored feature round</option><option value="20261001-193802">Rejected layout round</option></select><button type="button" id="compare-back">← Index</button><span class="compare-hint">Version switching reloads the preview.</span></div>
+<iframe class="compare-frame" id="compare-frame" title="Terminal mockup preview"></iframe>
+</section>
+<script>
+(()=>{
+ const output=document.getElementById('output'),input=document.getElementById('input'),screen=document.getElementById('screen'),form=document.getElementById('form');
+ const history=[];let position=0,draft='';
+ const descriptions=[['about','who I am'],['stack','stuff I work with'],['projects','things I build'],['github','my code'],['contact','get in touch'],['blog','things I write'],['designs','compare current / previous styles'],['versions','browse saved versions'],['clear','wipe the screen']];
+ const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el};
+ function prompt(){const s=node('span',undefined,'ps1');const host=node('span',undefined,'hostname');host.append(node('span','you','host'),node('span','@','at'),document.createTextNode('home '));s.append(host,node('span','~/your.dev','path'),document.createTextNode(' $'));return s}
+ function scroll(){screen.scrollTop=screen.scrollHeight}
+ function commandButton(command,label){const b=node('button',label||command,'text-button');b.type='button';b.addEventListener('click',()=>execute(command));return b}
+ function help(parent){parent.append(node('div','Type/click a command','muted'));const list=node('div',undefined,'commands');descriptions.forEach(([command,description])=>{const row=node('div',undefined,'command-row');const b=commandButton(command);b.className='command';const dots=node('span',undefined,'leader');dots.setAttribute('aria-hidden','true');row.append(b,dots,node('span',description,'description'));list.append(row)});parent.append(list)}
+ function welcome(){const intro=node('div',undefined,'intro');intro.append(node('p','Your Name','brand'),node('p','software | design | curious','muted'));output.append(intro);help(output)}
+ const text={
+ about:["Hi, I’m Your Name. I like building useful things and figuring out how they work.","This is a sample biography. Replace it with a few lines about yourself—what you do, what interests you, and what you’re working on."],
+ stack:["languages   TypeScript · Python · HTML · CSS","tools       Git · Docker · Linux · a text editor","interests   web apps · small tools · open source","Sample stack—replace with your actual tools."],
+ github:["No GitHub profile configured in this mockup.","Your real profile link will appear here."],
+ contact:["Want to say hello?","Your contact details will appear here. No email address is configured in this mockup."],
+ blog:["notes/  — sample writing","01  Building small things that matter","02  A few notes on learning in public","These are placeholder entries, not published articles."],
+ 'blog 1':["Building small things that matter","Sample article: A small tool that solves one problem well can be more useful than a big idea that never ships."],
+ 'blog 2':["A few notes on learning in public","Sample article: Write down what you tried, what surprised you, and what you’d change next time."],
+ 'project 1':["fieldnotes — sample project","A minimal tool for collecting ideas and finding them again.","This is a fictional project detail. Replace it with your own description and repository link."],
+ 'project 2':["little-tools — sample project","A collection of small utilities that make everyday work easier.","This is a fictional project detail. Replace it with your own description and repository link."]};
+ const themes={rose:['#100c10','#e8dfe5','#aa9ba6','#f08caf','#d9b36d','#743248','#291921'],amber:['#100e09','#e8e0cb','#aca38d','#e7bd6e','#cf9960','#71592a','#251e11'],green:['#09110e','#dce8df','#96ac9d','#92d7a8','#c9be7c','#335b43','#13241a']};
+ const snapshot='20261001-190313';
+ const archives=[['20261001-190313','Before feature round'],['20261001-192122','Restored feature round'],['20261001-193802','Rejected layout round']];
+ const studies=[['01-quiet-terminal.html','Quiet Terminal · Field Log'],['02-paper-console.html','Paper Console · Correspondence Archive'],['03-neon-workbench.html','Neon Workbench · Signal Lab'],['04-orbit-desktop.html','Orbit Terminal · Orbital Field Log']];
+ const comparison=document.getElementById('comparison'),frame=document.getElementById('compare-frame');let selectedStudy=0;
+ function showVersion(version){const archive=version==='previous'?snapshot:version==='current'?null:archives.find(([id])=>id===version)?.[0];frame.src='mockups/'+(archive?'versions/'+archive+'/':'')+studies[selectedStudy][0];const label=archive?archives.find(([id])=>id===archive)[1]:'current twist';frame.title=studies[selectedStudy][1]+' — '+label;document.getElementById('compare-title').textContent=frame.title;document.getElementById('compare-current').setAttribute('aria-pressed',String(!archive));document.getElementById('compare-previous').setAttribute('aria-pressed',String(archive===snapshot));document.getElementById('compare-archive').value=archive||'current';}
+ function openStudy(index,version='current'){selectedStudy=index;comparison.hidden=false;showVersion(version);document.getElementById(version==='previous'?'compare-previous':'compare-current').focus();}
+ document.getElementById('compare-current').addEventListener('click',()=>showVersion('current'));
+ document.getElementById('compare-previous').addEventListener('click',()=>showVersion('previous'));
+ document.getElementById('compare-archive').addEventListener('change',event=>showVersion(event.target.value));
+ document.getElementById('compare-back').addEventListener('click',()=>{comparison.hidden=true;frame.removeAttribute('src');input.focus()});
+ function listStudies(parent){parent.append(node('p','Four terminal studies · current / previous opens a quick-toggle preview. The Archive selector retains earlier rounds.','muted'));studies.forEach(([file,name],index)=>{const row=node('div',undefined,'version-row');row.append(node('div',String(index+1).padStart(2,'0')+'  '+name,'brand'));for(const version of ['current','previous']){const button=node('button',version,'text-button');button.type='button';button.addEventListener('click',()=>openStudy(index,version));row.append(button)}const direct=node('a','open file ↗','gold');direct.href='mockups/'+file;row.append(direct);parent.append(row)});parent.append(node('p','Previous snapshot: '+snapshot+' · also try view 2 previous. Switching versions resets the preview session.','muted'));}
+ function printLines(parent,lines){lines.forEach(line=>parent.append(node('p',line)))}
+ function execute(raw){
+ const value=raw.trim();input.value='';if(!value){input.focus();return}
+ history.push(value);if(history.length>100)history.shift();position=history.length;draft='';
+ const command=value.toLowerCase().replace(/\s+/g,' ');
+ if(command==='clear'||command==='cls'){output.replaceChildren();input.focus();scroll();return}
+ const entry=node('div',undefined,'entry');const echo=node('div',undefined,'echo');echo.append(prompt(),document.createTextNode(' '+value));const response=node('div',undefined,'response');entry.append(echo,response);output.append(entry);
+ if(command==='help')help(response);
+ else if(command==='designs'||command==='versions')listStudies(response);
+ else if(/^view [1-4]( (current|previous))?$/.test(command)){const parts=command.split(' ');openStudy(Number(parts[1])-1,parts[2]||'current');response.append(node('p','Opened '+studies[Number(parts[1])-1][1]+'. Use the preview titlebar to toggle versions.','muted'));}
+ else if(command==='home'){output.replaceChildren();welcome()}
+ else if(Object.hasOwn(text,command)){printLines(response,text[command]);if(command==='blog'){response.append(commandButton('blog 1','read 01'),document.createTextNode('  '),commandButton('blog 2','read 02'))}}
+ else if(command==='projects'){
+ [['fieldnotes','A small space for thoughts and ideas.'],['little-tools','Useful utilities for everyday work.']].forEach(([name,desc],i)=>{const project=node('div',undefined,'project');project.append(commandButton('project '+(i+1),name),node('div',desc,'muted'));response.append(project)});response.append(node('div','Sample projects. Click a name or type project 1.','muted'))
+ }
+ else if(command==='theme')printLines(response,['Themes: rose · amber · green','Try: theme amber']);
+ else if(command.startsWith('theme ')&&Object.hasOwn(themes,command.slice(6))){const name=command.slice(6);['--bg','--text','--muted','--accent','--gold','--border','--bar'].forEach((key,i)=>document.documentElement.style.setProperty(key,themes[name][i]));response.append(node('div','Theme set to '+name+'.'))}
+ else if(command==='whoami')response.append(node('div','Your Name (demo identity)'));
+ else if(command==='pwd')response.append(node('div','/home/you/your.dev'));
+ else if(command==='ls')printLines(response,['about.txt  stack.txt  projects/  blog/  contact.txt']);
+ else if(command.startsWith('echo '))response.append(node('div',value.slice(5)));
+ else if(command==='date')response.append(node('div',new Date().toLocaleString()));
+ else response.append(node('div',value+': command not found. Type help.','accent'));
+ if(comparison.hidden)input.focus({preventScroll:true});scroll()
+ }
+ form.addEventListener('submit',e=>{e.preventDefault();execute(input.value)});
+ input.addEventListener('keydown',e=>{
+ if(e.key==='ArrowUp'){e.preventDefault();if(position===history.length)draft=input.value;if(position>0)position--;input.value=history[position]||''}
+ else if(e.key==='ArrowDown'){e.preventDefault();if(position<history.length)position++;input.value=position===history.length?draft:history[position]}
+ else if(e.key==='Tab'&&input.value.trim()){
+ const options=[...descriptions.map(r=>r[0]),'help','home','theme','whoami','pwd','ls','date'].filter(c=>c.startsWith(input.value.toLowerCase()));if(options.length===1){e.preventDefault();input.value=options[0]}
+ }else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='l'){e.preventDefault();execute('clear')}
+ });
+ screen.addEventListener('click',e=>{if(e.target===screen&&!window.getSelection().toString())input.focus()});
+ welcome();if(matchMedia('(pointer:fine)').matches)input.focus({preventScroll:true});
+})();
+</script>
+</body></html>

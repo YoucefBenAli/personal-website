@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070b16">
+  <title>Noctiluca — Signal Lab</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070b16;
+      --terminal: #090f1e;
+      --titlebar: #0c1425;
+      --line: #202d43;
+      --text: #dce7f5;
+      --muted: #9aaac0;
+      --faint: #62738d;
+      --cyan: #70f1ff;
+      --lime: #c4ff78;
+      --violet: #c5a0ff;
+      --amber: #ffc477;
+      --accent: var(--cyan);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; min-height: 100%; background: var(--bg); }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 10px;
+      color: var(--text);
+      background: radial-gradient(ellipse at 78% 0%, rgba(47, 101, 155, .16), transparent 35rem), var(--bg);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    body[data-theme="lime"] { --accent: var(--lime); }
+    body[data-theme="violet"] { --accent: var(--violet); }
+    body[data-theme="amber"] { --accent: var(--amber); }
+    .skip-link, .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+    .skip-link:focus {
+      position: fixed;
+      z-index: 5;
+      top: 7px;
+      left: 7px;
+      width: auto;
+      height: auto;
+      padding: 7px 10px;
+      clip: auto;
+      clip-path: none;
+      border: 1px solid var(--accent);
+      color: var(--bg);
+      background: var(--accent);
+    }
+    button, input { font: inherit; }
+    a:focus-visible, input:focus-visible, .terminal-body:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .terminal-window {
+      width: 100%;
+      height: calc(100vh - 20px);
+      height: calc(100dvh - 20px);
+      min-height: 260px;
+      display: grid;
+      grid-template-rows: 34px minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid #26334b;
+      border-radius: 4px;
+      background: var(--terminal);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, .3), inset 0 0 40px rgba(60, 115, 162, .035);
+    }
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--titlebar);
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1;
+      letter-spacing: .06em;
+    }
+    .window-mark { display: flex; align-items: center; gap: 7px; }
+    .window-mark::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 9px color-mix(in srgb, var(--accent) 65%, transparent);
+      content: "";
+    }
+    .title-host { color: #c1ccde; }
+    .title-state { color: var(--faint); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+    .terminal-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 17px 20px 20px;
+      scrollbar-color: #34445e transparent;
+      scrollbar-width: thin;
+      overscroll-behavior: contain;
+    }
+    .transcript { width: 100%; margin: 0; }
+    .line {
+      min-height: 1.7em;
+      color: var(--muted);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .line.blank { min-height: .8em; }
+    .line.identity { color: var(--text); font-size: 14px; letter-spacing: .035em; }
+    .line.identity strong { color: var(--accent); font-weight: 600; text-shadow: 0 0 13px color-mix(in srgb, var(--accent) 30%, transparent); }
+    .line.dim { color: var(--faint); font-size: 10px; }
+    .line.prompt-echo { color: #d5e0ef; }
+    .sigil { margin-right: 9px; color: var(--accent); }
+    .line.output { color: #b9c7da; }
+    .line.output strong { color: var(--accent); font-weight: 500; }
+    .line a { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent); text-underline-offset: 3px; }
+    .line a:hover { text-decoration-color: currentColor; }
+    .command-list { color: var(--muted); }
+    .command-list strong { color: var(--accent); font-weight: 500; }
+    .prompt-bar {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      margin-top: 10px;
+    }
+    .prompt-symbol { flex: 0 0 auto; color: var(--accent); }
+    .prompt-form { min-width: 0; flex: 1; }
+    .prompt-input {
+      display: block;
+      width: 100%;
+      height: 27px;
+      padding: 2px 0;
+      border: 0;
+      border-bottom: 1px solid #27364d;
+      border-radius: 0;
+      outline: none;
+      color: var(--text);
+      background: transparent;
+      caret-color: var(--accent);
+      font-size: 12px;
+    }
+    .prompt-input:focus { border-bottom-color: var(--accent); }
+    .prompt-input::placeholder { color: #63748c; opacity: 1; }
+    @media (max-width: 560px) {
+      body { padding: 7px; font-size: 11px; }
+      .terminal-window { height: calc(100vh - 14px); height: calc(100dvh - 14px); grid-template-rows: 32px minmax(0, 1fr); }
+      .titlebar { padding: 0 9px; }
+      .title-state { font-size: 8px; }
+      .terminal-body { padding: 13px 13px 17px; }
+      .prompt-bar { margin-top: 8px; }
+    }
+    @media (max-width: 360px) {
+      body { padding: 5px; }
+      .terminal-window { height: calc(100vh - 10px); height: calc(100dvh - 10px); }
+      .terminal-body { padding-right: 10px; padding-left: 10px; }
+      .title-host { font-size: 9px; }
+    }
+    @media (max-height: 420px) {
+      .terminal-body { padding-top: 10px; padding-bottom: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body data-theme="cyan">
+  <a class="skip-link" href="#terminal-body">Skip to terminal</a>
+  <main class="terminal-window" aria-label="Noctiluca signal lab terminal">
+    <header class="titlebar">
+      <span class="window-mark">NIGHT SHIFT / SIGNAL LAB</span>
+      <span class="title-host">noctiluca.dev</span>
+      <span class="title-state">offline · sample data</span>
+    </header>
+    <section class="terminal-body" id="terminal-body" tabindex="0" aria-label="Terminal transcript and command prompt">
+      <div class="transcript" id="transcript" role="log" aria-live="polite" aria-relevant="additions text"></div>
+      <div class="prompt-bar">
+        <span class="prompt-symbol" aria-hidden="true">❯</span>
+        <form class="prompt-form" id="prompt-form" aria-label="Terminal command">
+          <label class="sr-only" for="prompt-input">Enter a command</label>
+          <input class="prompt-input" id="prompt-input" name="command" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Enter a command" placeholder="type help · ↑↓ history">
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const transcript = document.getElementById("transcript");
+      const terminalBody = document.getElementById("terminal-body");
+      const input = document.getElementById("prompt-input");
+      const routes = {
+        checkout: {
+          budget: 60,
+          hops: [["edge-cache", 3], ["session-gate", 11], ["order-api", 24]]
+        },
+        search: {
+          budget: 55,
+          hops: [["edge-cache", 5], ["query-index", 14], ["search-api", 19]]
+        },
+        assets: {
+          budget: 30,
+          hops: [["edge-cache", 2], ["image-worker", 8], ["object-store", 7]]
+        }
+      };
+      const projects = [
+        { slug: "signal-garden", title: "Signal Garden", description: "A tiny visualization for growing systems from event streams.", details: "A fictional creative-coding study in turning small events into readable patterns. Sample project; no live preview." },
+        { slug: "quiet-cache", title: "Quiet Cache", description: "A reading list that keeps its useful details close at hand.", details: "A sample product concept exploring fast capture, offline-friendly notes, and deliberately calm defaults. Illustrative copy only." },
+        { slug: "packet-poems", title: "Packet Poems", description: "A playful field guide to the invisible paths data takes.", details: "A fictional educational web experiment about networks, latency, and making technical systems approachable. No external service is connected." }
+      ];
+      const history = [];
+      const themes = ["cyan", "lime", "violet", "amber"];
+      let historyIndex = 0;
+      let historyDraft = "";
+      let themeIndex = 0;
+
+      function make(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+      }
+      function line(text, className = "line output") {
+        const element = make("div", className, text);
+        transcript.append(element);
+        return element;
+      }
+      function blank() { line("", "line blank"); }
+      function followPrompt() { terminalBody.scrollTop = terminalBody.scrollHeight; }
+      function echo(command) {
+        const entry = make("div", "line prompt-echo");
+        entry.append(make("span", "sigil", "❯"), document.createTextNode(command));
+        transcript.append(entry);
+      }
+      function linkedLine(label, href, accessibleName) {
+        const row = make("div", "line output");
+        const link = make("a", "", label);
+        link.href = href;
+        link.setAttribute("aria-label", accessibleName);
+        row.append(link);
+        transcript.append(row);
+      }
+      function addInitialContent() {
+        line("NOCTILUCA // PERSONAL SIGNAL TERMINAL", "line dim");
+        const identity = make("div", "line identity");
+        identity.append(make("strong", "", "Your Name"));
+        transcript.append(identity);
+        line("Developer · interface tinkerer · curious by default", "line");
+        line("Synthetic traces only. Nothing is sent over the network.", "line dim");
+        blank();
+        line("Try: help · trace checkout · theme violet", "line output");
+      }
+      function writeHelp() {
+        line("COMMANDS // signal lab + portfolio", "line dim");
+        blank();
+        [
+          ["about", "Short bio"],
+          ["stack", "Tools and working methods"],
+          ["projects", "Sample work; add detail with project <slug>"],
+          ["notes", "A few working principles"],
+          ["contact", "Contact placeholder and publishing note"],
+          ["signals", "List routes available to the trace simulator"],
+          ["trace <route>", "Inspect synthetic hop timings and latency budget"],
+          ["theme [cyan|lime|violet|amber]", "Cycle or set the terminal accent"],
+          ["previous", "Open the archived version of this mockup"],
+          ["index", "Open the mockup comparison index"],
+          ["clear", "Clear the transcript"],
+          ["help", "Show this command list"]
+        ].forEach(([command, description]) => {
+          const row = make("div", "line command-list");
+          row.append(make("strong", "", command), document.createTextNode("  —  " + description));
+          transcript.append(row);
+        });
+        blank();
+        line("Tip: use ↑ / ↓ to revisit commands from this session.", "line dim");
+      }
+      function writeAbout() {
+        line("ABOUT // SAMPLE BIO", "line dim");
+        blank();
+        line("I'm Your Name, a developer who likes making useful things", "line output");
+        line("feel clear, considered, and a little unexpected. I enjoy", "line output");
+        line("working between engineering and design: sturdy systems,", "line output");
+        line("thoughtful details, and interfaces that respect people's time.", "line output");
+        blank();
+        line("Placeholder biography — replace with your own story.", "line dim");
+      }
+      function writeStack() {
+        line("STACK // SAMPLE TOOLBOX", "line dim");
+        blank();
+        line("Interface   HTML, CSS, JavaScript, TypeScript, accessibility", "line output");
+        line("Systems     Node.js, APIs, SQL, browser platform", "line output");
+        line("Practice    Git, testing, prototyping, clear documentation", "line output");
+        blank();
+        line("Illustrative list. Choose tools for the problem, not the trend.", "line dim");
+      }
+      function writeProjects() {
+        line("PROJECTS // FICTIONAL DEMO WORK", "line dim");
+        blank();
+        projects.forEach((project) => {
+          line(project.slug + " — " + project.title, "line output");
+          line("  " + project.description, "line");
+        });
+        blank();
+        line("Inspect a sample: project signal-garden", "line output");
+      }
+      function writeProject(slug) {
+        const project = projects.find((item) => item.slug === slug);
+        if (!project) {
+          line("Unknown sample project '" + slug + "'. Run projects to list valid slugs.", "line output");
+          return;
+        }
+        line("PROJECT // " + project.slug, "line dim");
+        blank();
+        line(project.title, "line output");
+        line(project.details, "line output");
+        blank();
+        line("Fictional portfolio sample · no live preview.", "line dim");
+      }
+      function writeNotes() {
+        line("NOTES // FIELD LOG", "line dim");
+        blank();
+        line("01  —  Measure what helps someone decide.", "line output");
+        line("A metric is useful when it gives a person a better next step.", "line");
+        blank();
+        line("02  —  Make the quiet path work.", "line output");
+        line("Keyboard access and clear defaults are part of the interface.", "line");
+        blank();
+        line("03  —  Ship the useful slice.", "line output");
+        line("A small working version can teach you where to go next.", "line");
+        blank();
+        line("Sample notes for this mockup.", "line dim");
+      }
+      function writeContact() {
+        line("CONTACT // PLACEHOLDER", "line dim");
+        blank();
+        line("I'd be happy to talk about thoughtful web work and good questions.", "line output");
+        line("No address or message endpoint is configured in this demo.", "line output");
+        line("Add a real contact method before publishing; this terminal", "line");
+        line("does not send or store messages.", "line");
+      }
+      function writeSignals() {
+        line("SIGNALS // SYNTHETIC ROUTES", "line dim");
+        blank();
+        Object.entries(routes).forEach(([name, route]) => {
+          line(name + "  budget " + route.budget + " ms  ·  " + route.hops.length + " hops", "line output");
+        });
+        blank();
+        line("Run trace <route> to inspect a sample path. No network request is made.", "line dim");
+      }
+      function writeTrace(routeName) {
+        const route = routes[routeName];
+        if (!route) {
+          line("Unknown route '" + (routeName || "") + "'. Run signals to list sample routes.", "line output");
+          return;
+        }
+        const elapsed = route.hops.reduce((sum, hop) => sum + hop[1], 0);
+        const headroom = route.budget - elapsed;
+        line("TRACE // " + routeName + " · SYNTHETIC SAMPLE", "line dim");
+        blank();
+        line("source: local demo  →  destination: " + route.hops[route.hops.length - 1][0], "line output");
+        route.hops.forEach(([service, latency], index) => {
+          line(String(index + 1).padStart(2, "0") + "  " + service.padEnd(16, " ") + "+" + latency + " ms", "line output");
+        });
+        blank();
+        line("elapsed " + elapsed + " ms  ·  budget " + route.budget + " ms  ·  headroom " + headroom + " ms", "line output");
+        line("status: " + (headroom >= 0 ? "WITHIN SAMPLE BUDGET" : "OVER SAMPLE BUDGET"), "line output");
+        line("Illustrative timings only — not live telemetry.", "line dim");
+      }
+      function setTheme(name) {
+        themeIndex = themes.indexOf(name);
+        document.body.dataset.theme = name;
+        return name;
+      }
+      function changeTheme(argument) {
+        if (argument) {
+          if (!themes.includes(argument)) {
+            line("Unknown theme '" + argument + "'. Choose cyan, lime, violet, or amber.", "line output");
+            return;
+          }
+          setTheme(argument);
+          line("Accent set to " + argument + ".", "line output");
+          return;
+        }
+        themeIndex = (themeIndex + 1) % themes.length;
+        const theme = themes[themeIndex];
+        document.body.dataset.theme = theme;
+        line("Accent set to " + theme + ". Run theme <name> to choose directly.", "line output");
+      }
+      function runCommand(rawCommand) {
+        const commandText = rawCommand.trim();
+        if (!commandText) return;
+        const [verb, ...args] = commandText.toLowerCase().split(/\s+/);
+        const argument = args.join(" ");
+        if (verb === "clear" || verb === "cls") {
+          transcript.replaceChildren();
+          terminalBody.scrollTop = 0;
+          return;
+        }
+        echo(commandText);
+        blank();
+        if (verb === "help" || verb === "home") writeHelp();
+        else if (verb === "about") writeAbout();
+        else if (verb === "stack") writeStack();
+        else if (verb === "projects") writeProjects();
+        else if (verb === "project") writeProject(argument);
+        else if (verb === "notes") writeNotes();
+        else if (verb === "contact") writeContact();
+        else if (verb === "signals" || verb === "routes") writeSignals();
+        else if (verb === "trace") writeTrace(argument);
+        else if (verb === "theme") changeTheme(argument);
+        else if (verb === "previous") {
+          line("ARCHIVE // READ-ONLY SNAPSHOT", "line dim");
+          blank();
+          linkedLine("Open archived terminal mockup (2026-10-01)", "versions/20261001-190313/03-neon-workbench.html", "Open the previous terminal mockup, archived October 1, 2026");
+          line("The archived file is a static, read-only copy.", "line dim");
+        } else if (verb === "index") {
+          line("MOCKUPS // COMPARISON INDEX", "line dim");
+          blank();
+          linkedLine("Open the mockup index", "../index.html", "Open the website mockup comparison index");
+        } else {
+          line("Command not found: '" + commandText + "'. Type help to see available commands.", "line output");
+        }
+        blank();
+        followPrompt();
+      }
+      function remember(command) {
+        if (command && history[history.length - 1] !== command) history.push(command);
+        historyIndex = history.length;
+        historyDraft = "";
+      }
+
+      document.getElementById("prompt-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const command = input.value.trim();
+        if (!command) return;
+        remember(command);
+        runCommand(command);
+        input.value = "";
+        input.focus();
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowUp" && history.length) {
+          event.preventDefault();
+          if (historyIndex === history.length) historyDraft = input.value;
+          historyIndex = Math.max(0, historyIndex - 1);
+          input.value = history[historyIndex];
+          input.setSelectionRange(input.value.length, input.value.length);
+        } else if (event.key === "ArrowDown" && history.length) {
+          event.preventDefault();
+          historyIndex = Math.min(history.length, historyIndex + 1);
+          input.value = historyIndex === history.length ? historyDraft : history[historyIndex];
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      });
+      addInitialContent();
+    })();
+  </script>
+</body>
+</html>

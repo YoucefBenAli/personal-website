@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#24172f">
+  <title>Your Name — orbital terminal</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --plum: #24172f;
+      --ink: #f7edf3;
+      --soft: #d1bfd0;
+      --quiet: #a38ca8;
+      --pink: #f0a2bd;
+      --peach: #ffc49f;
+      --lilac: #cbbcff;
+      --line: rgba(240, 162, 189, .48);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+    body {
+      min-height: 100svh;
+      padding: clamp(9px, 2vw, 22px);
+      background-color: #17101f;
+      background-image: radial-gradient(rgba(255, 196, 159, .19) .7px, transparent .8px);
+      background-size: 23px 23px;
+      color: var(--ink);
+    }
+    button, input { color: inherit; font: inherit; }
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--peach); outline-offset: 3px; }
+    .terminal {
+      width: 100%;
+      height: calc(100svh - clamp(18px, 4vw, 44px));
+      min-height: 360px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background:
+        radial-gradient(ellipse at 90% 6%, rgba(196, 163, 215, .08), transparent 36%),
+        radial-gradient(ellipse at 12% 93%, rgba(241, 140, 164, .07), transparent 38%),
+        var(--plum);
+      box-shadow: 0 14px 58px rgba(0, 0, 0, .34), 0 0 26px rgba(239, 161, 189, .055);
+    }
+    .screen {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: clamp(17px, 3vw, 29px) clamp(14px, 4vw, 38px);
+      scrollbar-color: rgba(240, 162, 189, .4) transparent;
+      scrollbar-width: thin;
+    }
+    .transcript { width: min(100%, 760px); padding: 0 0 4px; }
+    .output-line {
+      margin: 0 0 7px;
+      color: var(--soft);
+      font-size: 12px;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+    .output-line.output-heading { margin-top: 15px; color: var(--peach); }
+    .output-line.output-muted { color: var(--quiet); font-size: 10px; }
+    .output-line.command-echo { margin-top: 17px; color: var(--pink); }
+    .output-line.command-echo::before { content: "you@orbit:~$ "; color: var(--peach); }
+    .identity { margin: 10px 0 3px; color: var(--peach); font-size: 14px; font-weight: 600; letter-spacing: .045em; }
+    .tagline { margin: 0 0 18px; color: var(--soft); font-size: 12px; line-height: 1.7; }
+    .menu { width: min(100%, 650px); margin: 10px 0 14px; }
+    .menu-heading { margin: 0 0 5px; color: var(--quiet); font-size: 10px; letter-spacing: .11em; text-transform: uppercase; }
+    .command-row {
+      width: 100%;
+      min-height: 28px;
+      display: grid;
+      grid-template-columns: max-content minmax(10px, 1fr) minmax(0, 1.35fr);
+      align-items: baseline;
+      gap: 9px;
+      padding: 3px 6px;
+      border: 0;
+      border-radius: 3px;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+    .command-row:hover { background: rgba(203, 188, 255, .09); }
+    .command-row:focus-visible { outline-offset: 1px; }
+    .command-name { color: var(--pink); font-size: 12px; }
+    .leader {
+      align-self: center;
+      min-width: 10px;
+      height: 1px;
+      background-image: radial-gradient(circle, rgba(203, 188, 255, .52) 1px, transparent 1.3px);
+      background-position: left center;
+      background-size: 5px 2px;
+    }
+    .command-description { color: #b5a2ba; font-size: 11px; }
+    .orbit-map {
+      width: fit-content;
+      max-width: 100%;
+      margin: 2px 0 11px;
+      padding: 10px 13px;
+      border-left: 1px solid rgba(255, 196, 159, .55);
+      background: rgba(16, 10, 23, .3);
+      color: #e5c9e2;
+      font: inherit;
+      font-size: 11px;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+    .output-line a { color: var(--peach); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .output-line a:hover { color: #ffe4d3; }
+    .prompt-form {
+      width: min(100%, 760px);
+      display: flex;
+      align-items: baseline;
+      gap: 9px;
+      min-height: 38px;
+      margin-top: 10px;
+      padding: 12px 0 3px;
+      border-top: 1px dashed rgba(240, 162, 189, .27);
+      font-size: 12px;
+    }
+    .prompt-label { color: var(--peach); white-space: nowrap; }
+    .prompt-input { flex: 1; min-width: 0; padding: 0; border: 0; border-radius: 0; color: var(--ink); background: transparent; caret-color: var(--pink); font: inherit; }
+    .prompt-input::placeholder { color: #9b86a1; opacity: 1; }
+    .prompt-input:focus-visible { outline: none; }
+    .prompt-form:focus-within .prompt-label { color: #ffe0cf; }
+    .cursor { display: inline-block; flex: 0 0 7px; height: 14px; margin-left: -8px; background: var(--pink); opacity: .8; pointer-events: none; animation: blink 1.15s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    @media (max-width: 520px) {
+      body { padding: 8px; }
+      .terminal { height: calc(100svh - 16px); min-height: 340px; border-radius: 8px; }
+      .screen { padding: 18px 13px 13px; }
+      .command-row { grid-template-columns: max-content minmax(8px, 1fr) minmax(0, 1.3fr); gap: 6px; padding-inline: 3px; }
+      .command-name { font-size: 11px; }
+      .command-description { font-size: 10px; }
+      .prompt-form { gap: 7px; font-size: 11px; }
+      .prompt-label { font-size: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="terminal" aria-label="Your Name's orbital terminal portfolio">
+    <section class="screen" id="screen" aria-label="Terminal transcript and command prompt">
+      <div class="transcript" id="transcript" role="log" aria-live="polite" aria-relevant="additions text">
+        <p class="output-line output-muted">NIGHT SHIFT // ORBITAL FIELD LOG 04</p>
+        <p class="identity">YOUR NAME <span class="output-muted">/ SAMPLE OPERATOR</span></p>
+        <p class="tagline">[your role] · turning curious ideas into useful things for the web.</p>
+        <p class="output-line">Signal acquired. This is a sample portfolio terminal; replace the bracketed details with your own.</p>
+        <p class="output-line">Type <span class="command-name">help</span> or select a command to explore:</p>
+        <div class="menu" id="help-menu" aria-label="Available commands"></div>
+        <p class="output-line output-muted">↑ / ↓ recalls command history · try <span class="command-name">orbit</span> for a little star chart.</p>
+      </div>
+      <form class="prompt-form" id="command-form" autocomplete="off">
+        <label class="prompt-label" for="command-input">you@orbit:~$</label>
+        <input class="prompt-input" id="command-input" name="command" type="text" aria-label="Type a portfolio command" placeholder="help, orbit, about…" spellcheck="false" autocapitalize="off" autocomplete="off">
+        <span class="cursor" aria-hidden="true"></span>
+      </form>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const commands = [
+        ['about', 'who is at the controls'],
+        ['stack', 'favorite tools & materials'],
+        ['projects', 'selected work & experiments'],
+        ['notes', 'small thoughts from the log'],
+        ['contact', 'open a line of communication'],
+        ['orbit', 'chart a route & read telemetry'],
+        ['previous', 'visit the previous mockup'],
+        ['index', 'browse all mockups'],
+        ['help', 'show the command list'],
+        ['clear', 'clear this terminal']
+      ];
+      const content = {
+        about: [
+          'I’m Your Name, a [your role] who enjoys turning curious ideas into useful, thoughtful digital things.',
+          'I care about clear communication, kind collaboration, and craft at every scale.',
+          'Sample bio: replace this with your real story, interests, and location.'
+        ],
+        stack: [
+          'A few tools in my orbit:',
+          '  [language / framework]   building blocks',
+          '  [design tool]            sketches & systems',
+          '  [favorite tool]          whatever helps the idea',
+          'Sample stack—swap in tools you actually use.'
+        ],
+        projects: [
+          'A few example entries for your future project log:',
+          '  Field Notes    / a calmer way to collect observations',
+          '  Soft Signals   / a warm identity for community radio',
+          '  Common Ground  / a friendly neighborhood resource',
+          'These are invented placeholders, not published work. Replace with real projects and links.'
+        ],
+        notes: [
+          'A few open tabs in my brain:',
+          '  Make useful things.',
+          '  Stay a little curious.',
+          '  Leave room for play.',
+          'Sample notes—make these yours.'
+        ],
+        contact: [
+          'I’d love to hear what you’re making.',
+          'Replace this line with your real email address or preferred contact details.',
+          'No contact address or external link is active in this sample.'
+        ]
+      };
+      const worlds = {
+        morrow: ['MORROW / INNER PLANET', 'RANGE   0.42 AU', 'ORBIT   118 days · DRIFT +0.04° / day', 'BEACON  warm · SIGNAL 98%'],
+        vela: ['VELA / OUTER PLANET', 'RANGE   1.18 AU', 'ORBIT   402 days · DRIFT -0.01° / day', 'BEACON  cool · SIGNAL 91%'],
+        luna: ['LUNA / NATURAL SATELLITE', 'RANGE   384,400 km', 'ORBIT   27.3 days · DRIFT +0.12° / day', 'BEACON  dim · SIGNAL 76%']
+      };
+      const transcript = document.querySelector('#transcript');
+      const screen = document.querySelector('#screen');
+      const form = document.querySelector('#command-form');
+      const input = document.querySelector('#command-input');
+      const menu = document.querySelector('#help-menu');
+      let history = [];
+      let historyIndex = 0;
+
+      function addLine(text, className = 'output-line') {
+        const line = document.createElement('p');
+        line.className = className;
+        line.textContent = text;
+        transcript.append(line);
+        return line;
+      }
+      function renderMenu() {
+        const list = document.createElement('div');
+        list.className = 'menu';
+        list.setAttribute('aria-label', 'Available commands');
+        const heading = document.createElement('p');
+        heading.className = 'menu-heading';
+        heading.textContent = 'Command index';
+        list.append(heading);
+        commands.forEach(([name, description]) => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'command-row';
+          row.setAttribute('aria-label', `${name} — ${description}`);
+          const command = document.createElement('span');
+          command.className = 'command-name';
+          command.textContent = name;
+          const leader = document.createElement('span');
+          leader.className = 'leader';
+          leader.setAttribute('aria-hidden', 'true');
+          const detail = document.createElement('span');
+          detail.className = 'command-description';
+          detail.textContent = description;
+          row.append(command, leader, detail);
+          row.addEventListener('click', () => runCommand(name));
+          list.append(row);
+        });
+        return list;
+      }
+      function showHelp() {
+        addLine('Available commands:', 'output-line output-heading');
+        transcript.append(renderMenu());
+        addLine('Try “orbit morrow”, “previous”, or “index”.', 'output-line output-muted');
+      }
+      function showOrbit(target) {
+        addLine('ORBITAL TELEMETRY // ILLUSTRATIVE SAMPLE DATA', 'output-line output-heading');
+        if (!target) {
+          const map = document.createElement('pre');
+          map.className = 'orbit-map';
+          map.textContent = '                  * VELA\n             .----/  1.18 AU\n  SOL *-----+\n             `----o MORROW / 0.42 AU\n                   \\__ LUNA';
+          transcript.append(map);
+          addLine('Chart is schematic, not to scale. Read a beacon with: orbit morrow | vela | luna');
+          addLine('All names and readings are fictional demo data; there is no live telemetry.', 'output-line output-muted');
+          return;
+        }
+        const report = worlds[target];
+        if (!report) {
+          addLine(`No beacon named “${target}”. Try morrow, vela, or luna.`);
+          return;
+        }
+        report.forEach((line, index) => addLine(line, index === 0 ? 'output-line output-heading' : 'output-line'));
+        addLine('Fictional demo telemetry—not a live reading.', 'output-line output-muted');
+      }
+      function addLinkLine(label, href, linkText) {
+        const line = addLine(`${label} `);
+        const link = document.createElement('a');
+        link.href = href;
+        link.textContent = linkText;
+        line.append(link);
+      }
+      function runCommand(raw) {
+        const entered = raw.trim();
+        if (!entered) return;
+        if (history[history.length - 1] !== entered) history.push(entered);
+        historyIndex = history.length;
+        addLine(entered, 'output-line command-echo');
+        const [name, ...args] = entered.toLowerCase().split(/\s+/);
+        const argument = args.join(' ');
+        if (name === 'clear' && !argument) {
+          transcript.replaceChildren();
+          addLine('Terminal cleared. Type help to reopen the command index.', 'output-line output-muted');
+          screen.scrollTop = 0;
+          input.focus({ preventScroll: true });
+          return;
+        }
+        if (name === 'help' && !argument) {
+          showHelp();
+        } else if (name === 'orbit') {
+          showOrbit(argument);
+        } else if (name === 'previous' && !argument) {
+          addLinkLine('Previous mockup:', 'versions/20261001-190313/04-orbit-desktop.html', 'open the archived version');
+        } else if (name === 'index' && !argument) {
+          addLinkLine('Mockup index:', '../index.html', 'browse all terminal directions');
+        } else if (Object.prototype.hasOwnProperty.call(content, name) && !argument) {
+          content[name].forEach((line, index) => addLine(line, index === 0 ? 'output-line output-heading' : 'output-line'));
+        } else {
+          addLine(`command not found: ${entered}. Type help to see available commands.`);
+        }
+        screen.scrollTop = screen.scrollHeight;
+        input.focus({ preventScroll: true });
+      }
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const raw = input.value;
+        if (!raw.trim()) return;
+        input.value = '';
+        runCommand(raw);
+      });
+      input.addEventListener('keydown', event => {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          if (history.length) {
+            historyIndex = Math.max(0, historyIndex - 1);
+            input.value = history[historyIndex];
+            input.setSelectionRange(input.value.length, input.value.length);
+          }
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          if (history.length) {
+            historyIndex = Math.min(history.length, historyIndex + 1);
+            input.value = historyIndex === history.length ? '' : history[historyIndex];
+            input.setSelectionRange(input.value.length, input.value.length);
+          }
+        }
+      });
+      menu.replaceWith(renderMenu());
+    })();
+  </script>
+</body>
+</html>

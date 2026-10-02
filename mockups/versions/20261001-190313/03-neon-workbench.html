@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b16">
+  <title>Your Name — your.dev</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b16;
+      --terminal: #0b1020;
+      --line: #222b40;
+      --text: #d9e1f1;
+      --muted: #8c9ab4;
+      --faint: #596780;
+      --cyan: #64efff;
+      --lime: #c6fa72;
+      --violet: #b29aff;
+      --accent: var(--cyan);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; min-height: 100%; background: var(--bg); }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 14px;
+      color: var(--text);
+      background: radial-gradient(ellipse at 76% 0%, rgba(68, 63, 137, .14), transparent 36rem), var(--bg);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    body[data-accent="lime"] { --accent: var(--lime); }
+    body[data-accent="violet"] { --accent: var(--violet); }
+    button, input { font: inherit; }
+    button:focus-visible, input:focus-visible, .terminal-body:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .skip-link {
+      position: fixed;
+      z-index: 5;
+      top: 8px;
+      left: 8px;
+      padding: 7px 11px;
+      transform: translateY(-160%);
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      color: var(--bg);
+      background: var(--accent);
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .terminal-window {
+      width: 100%;
+      height: calc(100vh - 28px);
+      height: calc(100dvh - 28px);
+      min-height: 300px;
+      display: grid;
+      grid-template-rows: 36px minmax(0, 1fr);
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid #29324a;
+      border-radius: 6px;
+      background: var(--terminal);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .28);
+    }
+    .titlebar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 13px;
+      border-bottom: 1px solid var(--line);
+      background: #0e1424;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1;
+      letter-spacing: .045em;
+    }
+    .window-dots { display: flex; align-items: center; gap: 6px; }
+    .window-dots i { width: 7px; height: 7px; border-radius: 50%; background: #3e4961; }
+    .window-dots i:first-child { background: #f07c88; }
+    .window-dots i:nth-child(2) { background: #e7bd66; }
+    .window-dots i:nth-child(3) { background: #78c982; }
+    .title-host { position: absolute; left: 50%; transform: translateX(-50%); color: #aab6cc; }
+    .title-state { color: var(--faint); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+    .title-state::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 7px 1px 0; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .terminal-body {
+      overflow: auto;
+      padding: 20px 22px;
+      scrollbar-color: #303b53 transparent;
+      scrollbar-width: thin;
+      overscroll-behavior: contain;
+    }
+    .transcript { width: 100%; margin: 0; }
+    .line { min-height: 1.7em; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .line.blank { min-height: 1.1em; }
+    .line.identity { color: var(--text); font-size: 14px; letter-spacing: .015em; }
+    .line.identity strong { color: var(--accent); font-weight: 600; }
+    .line.dim { color: var(--faint); font-size: 10px; }
+    .line.prompt-echo { color: #c2cde0; }
+    .line.prompt-echo .sigil { margin-right: 9px; color: var(--accent); }
+    .line.output { color: #adb9ce; }
+    .line.output strong { color: var(--accent); font-weight: 500; }
+    .menu-heading { margin: 2px 0 5px; color: var(--faint); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .command-menu { width: 100%; max-width: 625px; }
+    .command-row {
+      width: 100%;
+      min-height: 25px;
+      display: grid;
+      grid-template-columns: minmax(112px, max-content) minmax(10px, 1fr) minmax(115px, 215px);
+      align-items: baseline;
+      gap: 10px;
+      padding: 1px 3px;
+      border: 0;
+      border-radius: 2px;
+      color: inherit;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+    .command-row:hover, .command-row:focus-visible { color: var(--text); background: rgba(255,255,255,.035); }
+    .command-name { color: var(--accent); white-space: nowrap; }
+    .command-leader { min-width: 8px; overflow: hidden; color: #46516a; white-space: nowrap; letter-spacing: .05em; }
+    .command-description { color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .command-row:hover .command-description, .command-row:focus-visible .command-description { color: #c1cde1; }
+    .prompt-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 0;
+      margin-top: 8px;
+      border-top: 0;
+      background: transparent;
+    }
+    .prompt-symbol { flex: 0 0 auto; color: var(--accent); font-size: 15px; }
+    .prompt-form { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
+    .prompt-input {
+      min-width: 0;
+      flex: 1;
+      height: 42px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      outline: none;
+      color: var(--text);
+      background: transparent;
+      caret-color: var(--accent);
+      font-size: 12px;
+    }
+    .prompt-input::placeholder { color: #536079; opacity: 1; }
+    .prompt-submit {
+      padding: 4px 0 4px 8px;
+      border: 0;
+      color: var(--faint);
+      background: transparent;
+      cursor: pointer;
+      font-size: 9px;
+      letter-spacing: .06em;
+    }
+    .prompt-submit:hover { color: var(--accent); }
+    @media (max-width: 560px) {
+      body { padding: 8px; font-size: 11px; }
+      .terminal-window { height: calc(100vh - 16px); height: calc(100dvh - 16px); grid-template-rows: 34px minmax(0,1fr); }
+      .titlebar { padding: 0 10px; }
+      .title-state { font-size: 8px; }
+      .terminal-body { padding: 30px 15px 32px; }
+      .command-row { grid-template-columns: minmax(105px, max-content) minmax(7px, 1fr) minmax(100px, 150px); gap: 7px; }
+      .command-description { font-size: 10px; }
+      .prompt-bar { padding: 0; }
+      .prompt-submit { font-size: 8px; }
+    }
+    @media (max-width: 360px) {
+      .terminal-body { padding-right: 11px; padding-left: 11px; }
+      .command-row { grid-template-columns: minmax(100px, max-content) minmax(4px, 1fr) minmax(92px, 125px); gap: 5px; }
+      .command-description { font-size: 9px; }
+    }
+    @media (max-height: 480px) {
+      .terminal-body { padding-top: 18px; padding-bottom: 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body data-accent="cyan">
+  <a class="skip-link" href="#terminal-body">Skip to terminal</a>
+  <main class="terminal-window" aria-label="Your Name personal website terminal">
+    <header class="titlebar">
+      <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="title-host">your.dev</span>
+      <span class="title-state">local demo</span>
+    </header>
+    <section class="terminal-body" id="terminal-body" tabindex="0" aria-label="Terminal transcript">
+      <div class="transcript" id="transcript" role="log" aria-live="polite" aria-relevant="additions text"></div>
+    <div class="prompt-bar">
+      <span class="prompt-symbol" aria-hidden="true">›</span>
+      <form class="prompt-form" id="prompt-form">
+        <label for="prompt-input" class="skip-link">Enter a command</label>
+        <input class="prompt-input" id="prompt-input" name="command" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Enter a command" placeholder="type a command · ↑↓ history">
+        <button class="prompt-submit" type="submit" aria-label="Run command">ENTER ↵</button>
+      </form>
+    </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const transcript = document.getElementById("transcript");
+      const terminalBody = document.getElementById("terminal-body");
+      const input = document.getElementById("prompt-input");
+      const projects = [
+        { slug: "glow-garden", title: "Glow Garden", description: "A small generative playground for colorful, growing forms.", details: "A fictional creative-coding experiment about procedural plants, patient animation, and making a screen feel a little more alive. Demo concept; no live project link." },
+        { slug: "orbit-notes", title: "Orbit Notes", description: "A lightweight place to collect thoughts in motion.", details: "A sample note-taking tool exploring quick capture, quiet organization, and a visual language borrowed from orbital paths. Prototype description for this demo." },
+        { slug: "field-guide", title: "Field Guide", description: "A pocket-sized guide to noticing the details.", details: "A fictional responsive reading project for small observations and useful discoveries. All project copy here is illustrative sample content." }
+      ];
+      const commandHistory = [];
+      let historyIndex = 0;
+      let historyDraft = "";
+      const accents = ["cyan", "lime", "violet"];
+      let accentIndex = 0;
+
+      function make(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+      }
+      function line(text, className = "line output") {
+        const element = make("div", className, text);
+        transcript.append(element);
+        return element;
+      }
+      function blank() { line("", "line blank"); }
+      function followTranscript() { terminalBody.scrollTop = terminalBody.scrollHeight; }
+      function menuRow(command, description) {
+        const row = make("button", "command-row");
+        row.type = "button";
+        row.setAttribute("aria-label", command + ": " + description);
+        row.append(make("span", "command-name", command), make("span", "command-leader", "················································"), make("span", "command-description", description));
+        row.addEventListener("click", () => runCommand(command));
+        return row;
+      }
+      function appendMenu(includeProjectList = false) {
+        const heading = make("div", "menu-heading", includeProjectList ? "Project commands" : "Explore");
+        transcript.append(heading);
+        const menu = make("div", "command-menu");
+        if (includeProjectList) {
+          projects.forEach((project) => menu.append(menuRow("project " + project.slug, project.description)));
+        } else {
+          [
+            ["about", "A little about me"],
+            ["stack", "Tools I like to work with"],
+            ["projects", "Selected work and experiments"],
+            ["notes", "Short thoughts from the workbench"],
+            ["contact", "How to get in touch"],
+            ["help", "Show these commands again"],
+            ["clear", "Clear the terminal"],
+            ["theme", "Cycle cyan / lime / violet"]
+          ].forEach(([command, description]) => menu.append(menuRow(command, description)));
+        }
+        transcript.append(menu);
+      }
+      function echo(command) {
+        const entry = make("div", "line prompt-echo");
+        entry.append(make("span", "sigil", "›"), document.createTextNode(command));
+        transcript.append(entry);
+      }
+      function addInitialContent() {
+        line("your.dev // personal terminal", "line dim");
+        const identity = make("div", "line identity");
+        identity.append(make("strong", "", "Your Name"));
+        transcript.append(identity);
+        line("Developer · interface tinkerer · curious by default", "line");
+        line("// Sample/demo content throughout — replace before publishing.", "line dim");
+        blank();
+        line("Hi. I make useful things for the web and care about how they feel to use.", "line output");
+        line("Use a command below, click a row, or type help to explore.", "line output");
+        blank();
+        appendMenu();
+        followTranscript();
+      }
+      function writeAbout() {
+        line("ABOUT // SAMPLE BIO", "line dim");
+        blank();
+        line("I'm Your Name, a developer who likes turning curious ideas into", "line output");
+        line("useful, thoughtful digital experiences. I enjoy the space between", "line output");
+        line("engineering and design: clear systems, expressive details, and", "line output");
+        line("interfaces that feel welcoming instead of getting in the way.", "line output");
+        blank();
+        line("This biography is placeholder copy for the mockup.", "line dim");
+      }
+      function writeStack() {
+        line("STACK // SAMPLE TOOLBOX", "line dim");
+        blank();
+        line("Interface   HTML, CSS, JavaScript, TypeScript, accessibility", "line output");
+        line("Application Node.js, React, small APIs, Postgres", "line output");
+        line("Workflow    Git, Figma, automated tests, careful questions", "line output");
+        blank();
+        line("Tools are materials; the right choice depends on the problem.", "line output");
+        line("Illustrative list — tailor this to your own work.", "line dim");
+      }
+      function writeProjects() {
+        line("PROJECTS // FICTIONAL DEMO WORK", "line dim");
+        blank();
+        projects.forEach((project) => {
+          line(project.slug + " — " + project.title, "line output");
+          line("  " + project.description, "line");
+        });
+        blank();
+        line("For a plain-text project detail, try: project <slug>", "line output");
+        appendMenu(true);
+      }
+      function writeNotes() {
+        line("NOTES // SAMPLE ENTRIES", "line dim");
+        blank();
+        line("2025.04  —  Make the quiet parts count.", "line output");
+        line("A little restraint can give the important thing room to breathe.", "line");
+        blank();
+        line("2025.03  —  Start with the useful version.", "line output");
+        line("A working first draft teaches more than a perfect plan.", "line");
+        blank();
+        line("2025.02  —  Keyboard is a real path.", "line output");
+        line("Every interaction should work without asking for a pointer.", "line");
+        blank();
+        line("Demo notes only; no external articles are linked.", "line dim");
+      }
+      function writeContact() {
+        line("CONTACT // PLACEHOLDER", "line dim");
+        blank();
+        line("For the real site, this is where a friendly invitation belongs.", "line output");
+        line("Contact details are intentionally not provided in this demo.", "line output");
+        line("No message endpoint is connected. Add a real address or form", "line");
+        line("before publishing; nothing here sends or stores messages.", "line");
+      }
+      function writeProject(slug) {
+        const project = projects.find((item) => item.slug === slug);
+        if (!project) {
+          line("No demo project named '" + slug + "'. Try projects to list valid slugs.", "line output");
+          return;
+        }
+        line("PROJECT // " + project.slug, "line dim");
+        blank();
+        line(project.title, "line output");
+        line(project.details, "line output");
+        blank();
+        line("Sample project text · no live preview or external link.", "line dim");
+      }
+      function changeAccent() {
+        accentIndex = (accentIndex + 1) % accents.length;
+        const accent = accents[accentIndex];
+        document.body.dataset.accent = accent;
+        return accent;
+      }
+      function runCommand(rawCommand) {
+        const commandText = rawCommand.trim();
+        if (!commandText) return;
+        echo(commandText);
+        const [verb, ...args] = commandText.toLowerCase().split(/\s+/);
+        const argument = args.join(" ");
+        if (verb === "clear" || verb === "cls") {
+          transcript.replaceChildren();
+          terminalBody.scrollTop = 0;
+          return;
+        }
+        blank();
+        if (verb === "help" || verb === "home") {
+          line("Commands // enter a command or select a row", "line dim");
+          blank();
+          appendMenu();
+        } else if (verb === "about") writeAbout();
+        else if (verb === "stack") writeStack();
+        else if (verb === "projects") writeProjects();
+        else if (verb === "notes") writeNotes();
+        else if (verb === "contact") writeContact();
+        else if (verb === "project") writeProject(argument);
+        else if (verb === "theme") {
+          const accent = changeAccent();
+          line("Accent set to " + accent + ". Run theme again to cycle colors.", "line output");
+        } else {
+          line("Command not found: '" + commandText + "'. Type help to see available commands.", "line output");
+        }
+        blank();
+        followTranscript();
+      }
+      function remember(command) {
+        if (command && commandHistory[commandHistory.length - 1] !== command) commandHistory.push(command);
+        historyIndex = commandHistory.length;
+        historyDraft = "";
+      }
+
+      document.getElementById("prompt-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const command = input.value;
+        if (!command.trim()) return;
+        remember(command);
+        runCommand(command);
+        input.value = "";
+        input.focus();
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowUp" && commandHistory.length) {
+          event.preventDefault();
+          if (historyIndex === commandHistory.length) historyDraft = input.value;
+          historyIndex = Math.max(0, historyIndex - 1);
+          input.value = commandHistory[historyIndex];
+          input.setSelectionRange(input.value.length, input.value.length);
+        } else if (event.key === "ArrowDown" && commandHistory.length) {
+          event.preventDefault();
+          historyIndex = Math.min(commandHistory.length, historyIndex + 1);
+          input.value = historyIndex === commandHistory.length ? historyDraft : commandHistory[historyIndex];
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      });
+      addInitialContent();
+    })();
+  </script>
+</body>
+</html>
