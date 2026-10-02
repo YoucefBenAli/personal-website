@@ -26,10 +26,8 @@ window.SITE_CONTENT = {
     url: 'https://github.com/YoucefBenAli/personal-pi-settings',
     linkLabel: 'Explore my Pi setup on GitHub ↗'
   },
-  projects: [], // { name: '...', description: '...', url: 'https://...' }
   github: 'https://github.com/YoucefBenAli', // Full profile URL.
-  email: '',
+  email: 'ybena102+website@uottawa.ca',
   contact: '' // Optional contact introduction.
 };
-// TODO: Add a terminal-driven writing archive when real posts are available.
-// Archive naming and commands (letters/blog/read) remain intentionally undecided.
+// Deferred projects and writing archive plans are tracked in TODO.md.

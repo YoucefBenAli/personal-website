@@ -28,7 +28,7 @@
   const commands = [
     ['whoami', 'a little context'], ['stack', 'tools I use'],
     ['experience', 'where I’ve worked'], ['ai', 'my AI coding setup'],
-    ['projects', 'things I build'], ['github', 'my code'],
+    ['github', 'my code'],
     ['contact', 'get in touch'], ['theme', 'cycle the palette'],
     ['help', 'available commands'], ['home', 'back to the beginning'],
     ['clear', 'clear the transcript'], ['designs', 'saved design studies'],
@@ -41,7 +41,6 @@
     'stack.txt': 'stack',
     'experience.txt': 'experience',
     'ai.txt': 'ai',
-    'projects.txt': 'projects',
     'github.txt': 'github',
     'contact.txt': 'contact'
   };
@@ -154,16 +153,6 @@
         if (content.ai?.description) print(response, content.ai.description);
         if (!link(response, content.ai?.linkLabel || 'AI setup on GitHub ↗', content.ai?.url)) {
           print(response, 'No AI setup repository configured yet.', 'muted');
-        }
-        break;
-      case 'projects':
-        if (!content.projects.length) print(response, 'No projects listed yet. This space is reserved for real work.', 'muted');
-        for (const project of content.projects) {
-          const item = node('div', undefined, 'project');
-          print(item, project.name, 'project-title');
-          print(item, project.description);
-          if (project.url) link(item, 'View project ↗', project.url);
-          response.append(item);
         }
         break;
       case 'github':

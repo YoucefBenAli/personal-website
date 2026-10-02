@@ -40,11 +40,11 @@ const path = require('node:path');
       await page.locator('.leader').first().click();
       assert.equal(await input.evaluate(el => el === document.activeElement), true);
       assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()), '#70F1FF');
-      for (const command of ['whoami', 'stack', 'experience', 'ai', 'projects', 'github', 'contact']) await run(command);
-      assert.equal(await page.locator('.entry').count(), 7);
+      for (const command of ['whoami', 'stack', 'experience', 'ai', 'github', 'contact']) await run(command);
+      assert.equal(await page.locator('.entry').count(), 6);
       await run('ls');
-      assert.equal(await page.locator('.response').last().innerText(), 'whoami.txt  stack.txt  experience.txt  ai.txt  projects.txt  github.txt  contact.txt');
-      for (const command of ['whoami', 'stack', 'experience', 'ai', 'projects', 'github', 'contact']) {
+      assert.equal(await page.locator('.response').last().innerText(), 'whoami.txt  stack.txt  experience.txt  ai.txt  github.txt  contact.txt');
+      for (const command of ['whoami', 'stack', 'experience', 'ai', 'github', 'contact']) {
         await run(command);
         const expected = await page.locator('.response').last().innerHTML();
         await run(`cat ${command}.txt`);
@@ -73,11 +73,19 @@ const path = require('node:path');
       }
       await run('cat'); assert.match(await page.locator('.response').last().innerText(), /Usage: cat <file>/);
       await input.fill('cat ');
-      for (const filename of ['whoami.txt', 'stack.txt', 'experience.txt', 'ai.txt', 'projects.txt', 'github.txt', 'contact.txt', 'whoami.txt']) {
+      for (const filename of ['whoami.txt', 'stack.txt', 'experience.txt', 'ai.txt', 'github.txt', 'contact.txt', 'whoami.txt']) {
         await input.press('Tab'); assert.equal(await input.inputValue(), `cat ${filename}`);
       }
       await input.fill('cat pro'); await input.press('Tab');
-      assert.equal(await input.inputValue(), 'cat projects.txt');
+      assert.equal(await input.inputValue(), 'cat pro');
+      await run('projects');
+      assert.match(await page.locator('.response').last().innerText(), /Command not found/);
+      await run('cat projects.txt');
+      assert.match(await page.locator('.response').last().innerText(), /No such file/);
+      await run('help');
+      assert.equal(await page.getByRole('button', { name: 'projects', exact: true }).count(), 0);
+      await input.fill('proj'); await input.press('Tab');
+      assert.equal(await input.inputValue(), 'proj');
       await input.fill('c');
       for (const expected of ['contact', 'clear', 'cat', 'contact']) {
         await input.press('Tab'); assert.equal(await input.inputValue(), expected);
