@@ -88,10 +88,7 @@ a { color: var(--accent); text-underline-offset: 4px; }
 }
 .window-label { display: flex; align-items: center; gap: 12px; min-width: 0; }
 #window-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dots { display: flex; gap: 6px; flex: none; }
-.dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--bar-accent, var(--accent)); opacity: .7; }
-.dots i:nth-child(2) { background: var(--amber); }
-.dots i:nth-child(3) { background: var(--bar-text, var(--muted)); }
+.terminal-mark { flex: none; color: var(--bar-accent, var(--accent)); font-weight: 600; }
 .theme-label { color: var(--bar-accent, var(--accent)); }
 .screen { flex: 1; min-height: 0; overflow: auto; padding: 18px 18px 24px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; overflow-wrap: anywhere; cursor: text; }
 .intro { margin-bottom: 27px; }

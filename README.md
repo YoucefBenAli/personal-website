@@ -18,6 +18,10 @@ Explore my background, technical toolkit, experience, and AI coding setup throug
 
 Use **Tab** to complete commands and **↑ / ↓** to browse command history. Try `theme` to cycle through cyan, lime, and amber palettes, or `clear` to start with a clean terminal.
 
+## Design inspiration
+
+This website's design was heavily inspired by [rose.dev](https://rose.dev).
+
 ## Built with
 
 Plain HTML, CSS, and JavaScript—no framework, build step, external fonts, or runtime dependencies. The site includes responsive styling, clickable commands, and a theme preference saved locally in your browser.
