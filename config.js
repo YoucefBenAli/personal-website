@@ -1,7 +1,7 @@
 // Personal website content. Edit this file without changing terminal behavior.
 // Text is rendered as text, never as HTML. Project/profile URLs must use HTTP(S).
 window.SITE_CONTENT = {
-  name: 'Youcef',
+  name: 'Youcef Ben Ali',
   title: 'youcef / terminal',
   tagline: 'backend software engineer / Ottawa, Canada',
   about: [
